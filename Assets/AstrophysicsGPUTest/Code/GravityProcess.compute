@@ -1,0 +1,45 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+//RWTexture2D<float4> Result;
+
+struct NewtonBody
+{
+    float3 position;
+    float3 acceleration;
+    float3 velocity;
+    float mass;
+};
+ 
+RWStructuredBuffer<NewtonBody> Result;
+
+float deltaTime;
+int xSize;
+int ySize;
+int zSize;
+float gravityCenterX;
+float gravityCenterY;
+float gravityCenterZ;
+float gravityCenterMass;
+float gConstant; 
+
+//Number of threads 3 dims.
+[numthreads(2,1,1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    float3 gravityCenter = float3(gravityCenterX, gravityCenterY, gravityCenterZ);
+    float3 direction = normalize(gravityCenter - Result[id.x + ySize * id.y + zSize * id.z].position);
+    float distance = length(gravityCenter - Result[id.x + ySize * id.y + zSize * id.z].position);
+    if (distance == 0)
+        return;
+    
+    
+    Result[id.x + ySize * id.y + zSize * id.z].acceleration = gConstant * gravityCenterMass * direction / (distance * distance);
+    Result[id.x + ySize * id.y + zSize * id.z].velocity = Result[id.x + ySize * id.y + zSize * id.z].velocity + Result[id.x + ySize * id.y + zSize * id.z].acceleration * deltaTime;
+    Result[id.x + ySize * id.y + zSize * id.z].position = Result[id.x + ySize * id.y + zSize * id.z].position + Result[id.x + ySize * id.y + zSize * id.z].velocity * deltaTime; //id.x + id.y + id.z
+
+    //Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+}

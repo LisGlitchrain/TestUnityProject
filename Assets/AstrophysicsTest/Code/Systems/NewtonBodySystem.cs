@@ -7,21 +7,50 @@ using Unity.Burst;
 using Unity.Transforms;
 using Unity.Mathematics;
 using Unity.Collections;
-public class NewtonBodySystem : ComponentSystem
+public class NewtonBodySystem : JobComponentSystem
 {
-    protected override void OnUpdate()
+
+    [BurstCompile]
+    struct ProcessNewtonBodies : IJobForEach<NewtonBody, Translation>
     {
-        Entities.ForEach<NewtonBody, Translation>((ref NewtonBody body, ref Translation translation) =>
-             {
-                 body.velocity += body.accel * Time.DeltaTime;
-                 translation.Value += body.velocity * Time.DeltaTime;
-                 body.accel.x = 0;
-                 body.accel.y = 0;
-                 body.accel.z = 0;
-                 body.force.x = 0;
-                 body.force.y = 0;
-                 body.force.z = 0;
-             }
-        );
+        public float deltaTime;
+        public void Execute(ref NewtonBody body, ref Translation translation)
+        {
+            body.velocity += body.accel * deltaTime;
+            translation.Value += body.velocity * deltaTime;
+            body.accel = new float3(0);
+            body.force = new float3(0);
+        }
     }
+
+    protected override JobHandle OnUpdate(JobHandle inputDeps)
+    {
+        var job = new ProcessNewtonBodies()
+            {
+                deltaTime = Time.DeltaTime
+            };
+        return job.Schedule(this, inputDeps);
+    }
+
+    //public void Execute(ref NewtonBody body, ref Translation translation)
+    //{
+    //    body.velocity += body.accel * Time.deltaTime;
+    //    translation.Value += body.velocity * Time.deltaTime;
+    //    body.accel = new float3(0);
+    //    body.force = new float3(0);
+    //}
+
+
+    //protected override void OnUpdate()
+    //{
+    //    Entities.WithAll<NewtonBody>().ForEach((ref NewtonBody body, ref Translation translation) =>
+    //         {
+    //             body.velocity += body.accel * Time.DeltaTime;
+    //             translation.Value += body.velocity * Time.DeltaTime;
+    //             body.accel = new float3(0);
+    //             body.force = new float3(0);
+    //         }
+    //    );
+    //}
+
 }

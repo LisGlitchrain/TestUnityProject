@@ -10,49 +10,40 @@ using Unity.Collections;
 
 public class GravitySystem : ComponentSystem
 {
-    public const float Gscaled = 6.674e-4f; //6.674e-11f;
+    public static float Gscaled = 6.674e-4f; //6.674e-11f;
+
 
     //[BurstCompile]
     //struct ProcessGracityEmitters : IJobForEach<GravityEmitter, Translation>
     //{
     //    public void Execute(ref GravityEmitter gravityEmitter, ref Translation translation)
     //    {
-    //        var job = new ProcessGravityReceivers()
+    //        foreach(var receiver in receiversQuery.ToEntityArray(Allocator.TempJob))
     //        {
-    //            currentEmitter = gravityEmitter,
-    //            currentEmitterTranslation = translation
-    //        };
-    //    }
+    //            var bodyReceiver = GalaxySpawnerBridge.entityManager.GetComponentObject<NewtonBody>(receiver, typeof(NewtonBody));
+    //            var translationReceiver = GalaxySpawnerBridge.entityManager.GetComponentObject<Translation>(receiver, typeof(Translation));
 
-    //}
-
-
-    //[RequireComponentTag(typeof(GravityReceiver))]
-    //[BurstCompile]
-    //struct ProcessGravityReceivers : IJobForEach<NewtonBody, Translation>
-    //{
-    //    public GravityEmitter currentEmitter;
-    //    public Translation currentEmitterTranslation;
-    //    public void Execute(ref NewtonBody body, ref Translation translation)
-    //    {
-
-    //        var direction = (currentEmitterTranslation.Value - translation.Value);
-    //        var distance = GetMagnitudeFloat3(direction);
-    //        if (distance == 0) return;
-    //        var forceMagnitude = Gscaled * (currentEmitter.mass * body.mass) / Mathf.Pow(distance, 2);
-    //        var force = NormalizeFloat3(direction) * forceMagnitude;
-
-    //        //Debug.Log($"force add:{GetMagnitudeFloat3(force)}");
-    //        body.force += force;
+    //            var direction = (translation.Value - translationReceiver.Value);
+    //            var distance = Float3Helper.GetMagnitudeFloat3(direction);
+    //            if (distance < gravityEmitter.radius) return;
+    //            var accelMagnitude = Gscaled * gravityEmitter.mass / Mathf.Pow(distance, 2);
+    //            var accel = Float3Helper.NormalizeFloat3(direction) * accelMagnitude;
+    //            bodyReceiver.accel += accel;
+    //        }
     //    }
     //}
 
 
-    //protected override JobHandle OnUpdate(JobHandle inputDeps)
+
+    //protected override void OnUpdate(JobHandle inputDeps)
     //{
     //    var job = new ProcessGracityEmitters();
     //    return job.Schedule(this, inputDeps);
     //}
+
+
+
+    //---------------------------------------------------------TEST
 
 
 
@@ -61,25 +52,25 @@ public class GravitySystem : ComponentSystem
         ProcessAllEmitters();
     }
 
+
     public void ProcessAllEmitters()
     {
-        Entities.WithAll<GravityEmitter>().ForEach<GravityEmitter, Translation>((ref GravityEmitter gravEmitter, ref Translation translationEmitter) =>
+        Entities.WithAll<GravityEmitter>().ForEach((ref GravityEmitter gravEmitter, ref Translation translationEmitter) =>
             {
                 ProcessAllReceivers(gravEmitter, translationEmitter);
             }
         );
     }
+
     public void ProcessAllReceivers(GravityEmitter gravityEmitter, Translation translationEmitter)
     {
-        Entities.WithAll<GravityReceiver>().ForEach<NewtonBody, Translation>((ref NewtonBody bodyReceiver, ref Translation translationReceiver) =>
+        Entities.WithAll<GravityReceiver>().ForEach((ref NewtonBody bodyReceiver, ref Translation translationReceiver) =>
             {
                 var direction = (translationEmitter.Value - translationReceiver.Value);
                 var distance = Float3Helper.GetMagnitudeFloat3(direction);
                 if (distance < gravityEmitter.radius) return;
                 var accelMagnitude = Gscaled * gravityEmitter.mass / Mathf.Pow(distance, 2);
                 var accel = Float3Helper.NormalizeFloat3(direction) * accelMagnitude;
-
-                //Debug.Log($"force add:{GetMagnitudeFloat3(force)}");
                 bodyReceiver.accel += accel;
             }
         );

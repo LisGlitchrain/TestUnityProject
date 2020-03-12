@@ -35,12 +35,6 @@ public class AstroBodiesSpawner : MonoBehaviour
         FindObjectOfType<GravitationManager>().physicsEnabled = true;
     }
 
-    public void OnDrawGizmos()
-    {
-        
-    }
-
-
     public void SpawnSolarSystem()
     {
         var point = new Vector3(Random.Range(-boundX, boundX), Random.Range(-boundY, boundY), Random.Range(-boundZ, boundZ));
